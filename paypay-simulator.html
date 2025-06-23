@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayPay Simulator (修正版)</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        .container { max-width: 600px; margin: auto; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input, button { width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; }
+        button { cursor: pointer; margin-top: 10px; background-color: #00b900; color: white; border: none; border-radius: 5px; }
+        button.problem { background-color: #d9534f; }
+        hr { margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PayPay動作シミュレーター (中間ページなし)</h1>
+        <p>このページは、PayPay決済完了後のリダイレクト動作を模倣します。</p>
+
+        <div class="input-group">
+            <label for="liffId">LIFF ID:</label>
+            <input type="text" id="liffId" value="YOUR_LIFF_ID_HERE" placeholder="ここにあなたのLIFF IDを入力">
+        </div>
+        
+        <hr>
+        
+        <h3>検証パターンを選択</h3>
+
+        <button class="problem" onclick="redirectToProblematicUrl()">1. 問題が起きるURLでリダイレクト (クエリパラメータ`?`を使用)</button>
+        <button onclick="redirectToFragment()">2.【代替策】フラグメント(`#`)利用でリダイレクト</button>
+    </div>
+
+    <script>
+        // LIFFアプリに渡したいデータ（実際のredirect_uriの値に相当）
+        const redirectData = "/RSV_P/pxx/ClientService?AppSessionID=202506231800-TEST&status=success";
+
+        function getLiffId() {
+            return document.getElementById('liffId').value;
+        }
+
+        // 1. 問題の直接的な原因となるURLを生成してリダイレクト
+        function redirectToProblematicUrl() {
+            const liffId = getLiffId();
+            if (!liffId || liffId === "YOUR_LIFF_ID_HERE") {
+                alert("LIFF IDを入力してください。");
+                return;
+            }
+            const encodedData = encodeURIComponent(redirectData);
+            const liffUrl = `https://liff.line.me/${liffId}?redirect_uri=${encodedData}`;
+            console.log("Redirecting to (Problematic ?):", liffUrl);
+            window.location.href = liffUrl;
+        }
+
+        // 2. URLフラグメント(#)を利用するURLを生成してリダイレクト
+        function redirectToFragment() {
+            const liffId = getLiffId();
+            if (!liffId || liffId === "YOUR_LIFF_ID_HERE") {
+                alert("LIFF IDを入力してください。");
+                return;
+            }
+            const encodedData = encodeURIComponent(redirectData);
+            const liffUrl = `https://liff.line.me/${liffId}#redirect_uri=${encodedData}`;
+            console.log("Redirecting to (Alternative #):", liffUrl);
+            window.location.href = liffUrl;
+        }
+    </script>
+</body>
+</html>
