@@ -41,15 +41,6 @@
         // LIFFアプリに渡したいデータ
         const redirectData = "/RSV_P/pxx/ClientService?AppSessionID=202506231800-DEMO&status=success";
 
-        function getLiffId() {
-            const liffId = document.getElementById('liffId').value;
-            if (!liffId || liffId === "2007624426-93P1xyXj") {
-                alert("LIFF IDを入力してください。");
-                return null;
-            }
-            return liffId;
-        }
-
         // パターン1: 問題が起きるURL (クエリパラメータ)
         function redirectWithQuery() {
             const liffId = getLiffId();
