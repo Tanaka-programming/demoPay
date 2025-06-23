@@ -1,5 +1,5 @@
 <!-- ============================================================= -->
-<!--  ① PAYPAY-DEMO.HTML                                           -->
+<!--  ① PAYPAY‑DEMO.HTML                                           -->
 <!-- ============================================================= -->
 <!DOCTYPE html>
 <html lang="ja">
@@ -9,19 +9,21 @@
   <title>PayPay Simulator</title>
   <style>
     body {font-family:sans-serif;background:#f7f7f7;margin:0;display:grid;place-items:center;height:100vh;}
-    .card{background:#fff;padding:2rem;border-radius:1rem;box-shadow:0 4px 12px rgba(0,0,0,.1);width:100%;max-width:420px;}
+    .card{background:#fff;padding:2rem;border-radius:1rem;box-shadow:0 4px 12px rgba(0,0,0,.1);width:100%;max-width:460px;}
     label{font-weight:600;margin-top:1rem;display:block;}
     input{width:100%;padding:.5rem .75rem;margin-top:.25rem;border:1px solid #ccc;border-radius:.5rem;font-size:1rem;}
-    button{width:100%;margin-top:1rem;padding:.75rem;background:#00b900;color:#fff;font-size:1rem;font-weight:700;border:none;border-radius:.75rem;cursor:pointer;transition:opacity .2s;}
+    button{width:100%;margin-top:.75rem;padding:.6rem;background:#00b900;color:#fff;font-size:.95rem;font-weight:700;border:none;border-radius:.65rem;cursor:pointer;transition:opacity .2s;}
     button:hover{opacity:.85;}
     button.problem{background:#d9534f;}
-    .link-out{margin-top:1rem;font-size:.9rem;word-break:break-all;}
+    button.line{background:#4285f4;}
+    .link-out{margin-top:1rem;font-size:.85rem;word-break:break-all;}
+    hr{margin:1.5rem 0;border:none;border-top:1px dashed #ccc;}
   </style>
 </head>
 <body>
   <div class="card">
     <h1>PayPay Simulator</h1>
-    <p>疑似決済→LIFF B リダイレクトを検証します。</p>
+    <p>疑似決済 → LIFF B リダイレクトを検証します。</p>
 
     <label>LIFF ID</label>
     <input id="liffId" value="2007624426-93P1xyXj" />
@@ -29,40 +31,52 @@
     <label>戻り値パス (未エンコード)</label>
     <input id="resultPath" value="/RSV_P/pxx/ClientService?AppSessionID=202506231800-TEST&status=success" />
 
-    <button class="problem" onclick="goProblem()">?redirect_uri= (二重エンコード発生)</button>
-    <button onclick="goFragment()">#redirect_uri= (ハッシュ・推奨)</button>
+    <hr>
+    <h3>🔵 外部ブラウザ (https) 経由</h3>
+    <button class="problem" onclick="goProblem('https')">?redirect_uri= （二重エンコード）</button>
+    <button onclick="goFragment('https')">#redirect_uri= （ハッシュ推奨）</button>
+
+    <hr>
+    <h3>🟢 LINE アプリ内 (line://) 直通</h3>
+    <button class="problem line" onclick="goProblem('line')">?redirect_uri= （LINE Scheme）</button>
+    <button class="line" onclick="goFragment('line')">#redirect_uri= （LINE Scheme）</button>
+
     <div id="linkArea" class="link-out"></div>
+    <p style="font-size:.8rem;color:#666;margin-top:.5rem;">※ スマホで <b>LINE Scheme ボタン</b> をタップすると直接 LINE アプリが起動します。<br>
+       PC ブラウザでテストする場合は “外部ブラウザ” ボタンからコピーして下さい。</p>
   </div>
 
   <script>
     const liffInput = document.getElementById('liffId');
     const pathInput = document.getElementById('resultPath');
-    const linkArea = document.getElementById('linkArea');
+    const linkArea  = document.getElementById('linkArea');
 
-    function buildLink(pattern){
+    function buildLink(kind, pattern){
       const id = liffInput.value.trim();
       const path = pathInput.value.trim();
       if(!id||!path){alert('LIFF ID と 戻り値パスを入力して下さい');return null;}
-      return pattern(id,path);
+      const base = kind==='line' ? `line://app/${id}` : `https://liff.line.me/${id}`;
+      return pattern(base, path);
     }
-    function copy(link){
-      navigator.clipboard.writeText(link).then(()=>alert('リンクをコピーしました\n外部ブラウザに貼り付けて検証して下さい'));}
+
+    function copyToClip(link){
+      navigator.clipboard.writeText(link).then(()=>alert('リンクをコピーしました\n別ブラウザ/端末で貼り付けて検証して下さい'));}
 
     function setLinks(link){
-      linkArea.innerHTML=`<a href="${link}" target="_blank">外部ブラウザで開く (別タブ)</a>  |  <a href="#" onclick="copy('${link}');return false;">コピー</a>`;
+      linkArea.innerHTML=`<b>生成リンク:</b><br><a href="${link}" target="_blank">${link}</a><br><a href="#" onclick="copyToClip('${link}');return false;">コピー</a>`;
     }
 
-    function goProblem(){
-      const link = buildLink((id,path)=>`https://liff.line.me/${id}?redirect_uri=${encodeURIComponent(path)}`);
+    function goProblem(kind){
+      const link = buildLink(kind,(base,path)=>`${base}?redirect_uri=${encodeURIComponent(path)}`);
       if(!link)return;
       setLinks(link);
-      window.location.href=link;  // LINE に引き渡す通常フロー
+      // location.href = link;
     }
-    function goFragment(){
-      const link = buildLink((id,path)=>`https://liff.line.me/${id}#redirect_uri=${path}`);
+    function goFragment(kind){
+      const link = buildLink(kind,(base,path)=>`${base}#redirect_uri=${path}`);
       if(!link)return;
       setLinks(link);
-      window.location.href=link;
+      // location.href = link;
     }
   </script>
 </body>
