@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PayPay Simulator (検証版)</title>
+    <title>PayPay Simulator (修正版)</title>
     <style>
         body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
         .container { max-width: 600px; margin: auto; }
@@ -12,13 +12,13 @@
         input, button { width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; }
         button { cursor: pointer; margin-top: 10px; background-color: #00b900; color: white; border: none; border-radius: 5px; }
         button.problem { background-color: #d9534f; }
-        .notice { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 15px; border-radius: 5px; margin-top: 20px; }
         hr { margin: 20px 0; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>PayPay動作シミュレーター</h1>
+        <h1>PayPay動作シミュレーター (中間ページなし)</h1>
+        <p>このページは、PayPay決済完了後のリダイレクト動作を模倣します。</p>
 
         <div class="input-group">
             <label for="liffId">LIFF ID:</label>
@@ -29,35 +29,41 @@
         
         <h3>検証パターンを選択</h3>
 
-        <button class="problem" onclick="redirectWithQuery()">1. エラーが発生するパターン (`?`を使用)</button>
-        <button onclick="redirectWithFragment()">2. エラーが発生しないパターン (`#`を使用)</button>
-
-        <div class="notice">
-            <strong>注意:</strong> エラーを正しく再現するには、事前にLINEからログアウトし、ブラウザのキャッシュクリアとアプリ連携の解除を行ってください。
-        </div>
+        <button class="problem" onclick="redirectToProblematicUrl()">1. 問題が起きるURLでリダイレクト (クエリパラメータ`?`を使用)</button>
+        <button onclick="redirectToFragment()">2.【代替策】フラグメント(`#`)利用でリダイレクト</button>
     </div>
 
     <script>
-        // LIFFアプリに渡したいデータ
-        const redirectData = "/RSV_P/pxx/ClientService?AppSessionID=202506231800-DEMO&status=success";
+        // LIFFアプリに渡したいデータ（実際のredirect_uriの値に相当）
+        const redirectData = "/RSV_P/pxx/ClientService?AppSessionID=202506231800-TEST&status=success";
 
-        // パターン1: 問題が起きるURL (クエリパラメータ)
-        function redirectWithQuery() {
+        function getLiffId() {
+            return document.getElementById('liffId').value;
+        }
+
+        // 1. 問題の直接的な原因となるURLを生成してリダイレクト
+        function redirectToProblematicUrl() {
             const liffId = getLiffId();
-            if (!liffId) return;
+            if (!liffId || liffId === "2007624426-93P1xyXj") {
+                alert("LIFF IDを入力してください。");
+                return;
+            }
             const encodedData = encodeURIComponent(redirectData);
             const liffUrl = `https://liff.line.me/${liffId}?redirect_uri=${encodedData}`;
             console.log("Redirecting to (Problematic ?):", liffUrl);
             window.location.href = liffUrl;
         }
 
-        // パターン2: 解決策のURL (フラグメント)
-        function redirectWithFragment() {
+        // 2. URLフラグメント(#)を利用するURLを生成してリダイレクト
+        function redirectToFragment() {
             const liffId = getLiffId();
-            if (!liffId) return;
+            if (!liffId || liffId === "2007624426-93P1xyXj") {
+                alert("LIFF IDを入力してください。");
+                return;
+            }
             const encodedData = encodeURIComponent(redirectData);
             const liffUrl = `https://liff.line.me/${liffId}#redirect_uri=${encodedData}`;
-            console.log("Redirecting to (Solution #):", liffUrl);
+            console.log("Redirecting to (Alternative #):", liffUrl);
             window.location.href = liffUrl;
         }
     </script>
