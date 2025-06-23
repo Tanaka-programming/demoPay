@@ -1,3 +1,14 @@
+<!--
+  PayPay Simulator (修正版)
+  ------------------------------------------------------------
+  * ボタン① : Query パラメータ `?redirect_uri=` を使う『問題が起きる URL』
+  * ボタン② : Fragment `#redirect_uri=` を使う『推奨代替策』
+  ------------------------------------------------------------
+  使い方:
+    1. LIFF ID を入力（例: 2007624426-93P1xyXj）。
+    2. いずれかのボタンを押すと、実際にリダイレクトが発生し LINE が起動します。
+    3. LIFF 側 (liff-demo-fragment.html) が起動し、二重エンコードの有無を確認できます。
+-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -5,66 +16,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PayPay Simulator (修正版)</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
-        .container { max-width: 600px; margin: auto; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; }
-        input, button { width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; }
-        button { cursor: pointer; margin-top: 10px; background-color: #00b900; color: white; border: none; border-radius: 5px; }
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; background:#f5f5f5; }
+        .container { max-width: 640px; margin: auto; background:#fff; border-radius:1rem; box-shadow:0 4px 12px rgba(0,0,0,0.1); padding:2rem; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight:600; }
+        input, button { width: 100%; padding: 12px; font-size: 16px; box-sizing: border-box; border-radius:0.5rem; }
+        input { border:1px solid #ccc; }
+        button { cursor: pointer; margin-top: 10px; background-color: #00b900; color: white; border: none; transition:opacity .2s; font-weight:700; }
+        button:hover { opacity:0.85; }
         button.problem { background-color: #d9534f; }
-        hr { margin: 20px 0; }
+        hr { margin: 30px 0; border:none; border-top:1px solid #eee; }
+        code{background:#eee; padding:0.25rem 0.5rem; border-radius:0.25rem; display:inline-block;}
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>PayPay動作シミュレーター (中間ページなし)</h1>
-        <p>このページは、PayPay決済完了後のリダイレクト動作を模倣します。</p>
+        <h1>PayPay動作シミュレーター <small>(中間ページなし)</small></h1>
+        <p>このページは<strong>PayPay 決済完了後のリダイレクト</strong>を模倣します。<br>
+           ボタン①は『問題のあるパターン』、ボタン②は『推奨代替策』です。</p>
 
         <div class="input-group">
-            <label for="liffId">LIFF ID:</label>
-            <input type="text" id="liffId" value="2007624426-93P1xyXj" placeholder="ここにあなたのLIFF IDを入力">
+            <label for="liffId">LIFF ID (例: <code>2007624426-93P1xyXj</code>):</label>
+            <input type="text" id="liffId" value="2007624426-93P1xyXj" placeholder="ここにあなたの LIFF ID を入力">
         </div>
-        
-        <hr>
-        
-        <h3>検証パターンを選択</h3>
 
-        <button class="problem" onclick="redirectToProblematicUrl()">1. 問題が起きるURLでリダイレクト (クエリパラメータ`?`を使用)</button>
-        <button onclick="redirectToFragment()">2.【代替策】フラグメント(`#`)利用でリダイレクト</button>
+        <hr>
+        <h3>検証パターンを選択</h3>
+        <button class="problem" onclick="redirectToProblematicUrl()">1. 問題が起きる URL でリダイレクト<br><small>(クエリ `?redirect_uri=` 利用)</small></button>
+        <button onclick="redirectToFragment()">2. 【代替策】フラグメント `#redirect_uri=` 利用でリダイレクト</button>
     </div>
 
     <script>
-        // LIFFアプリに渡したいデータ（実際のredirect_uriの値に相当）
+        // LIFF アプリに渡したいデータ（実際の redirect_uri の VALUE 部分に相当）
         const redirectData = "/RSV_P/pxx/ClientService?AppSessionID=202506231800-TEST&status=success";
 
         function getLiffId() {
-            return document.getElementById('liffId').value;
+            return document.getElementById('liffId').value.trim();
         }
 
-        // 1. 問題の直接的な原因となるURLを生成してリダイレクト
+        // 1. 問題のあるパターン: クエリ ?redirect_uri= を使う
         function redirectToProblematicUrl() {
             const liffId = getLiffId();
-            if (!liffId || liffId === "YOUR_LIFF_ID_HERE") {
-                alert("LIFF IDを入力してください。");
+            if (!liffId) {
+                alert('LIFF ID を入力してください');
                 return;
             }
-            const encodedData = encodeURIComponent(redirectData);
-            const liffUrl = `https://liff.line.me/${liffId}?redirect_uri=${encodedData}`;
-            console.log("Redirecting to (Problematic ?):", liffUrl);
-            window.location.href = liffUrl;
+            const encoded = encodeURIComponent(redirectData); // 1 回エンコード → LIFF がさらにエンコード = 二重エンコード
+            const url = `https://liff.line.me/${liffId}?redirect_uri=${encoded}`;
+            console.log('Redirecting to (Problematic ?):', url);
+            window.location.href = url;
         }
 
-        // 2. URLフラグメント(#)を利用するURLを生成してリダイレクト
+        // 2. 推奨パターン: fragment #redirect_uri= を使う（エンコードは1回のみで済む）
         function redirectToFragment() {
             const liffId = getLiffId();
-            if (!liffId || liffId === "YOUR_LIFF_ID_HERE") {
-                alert("LIFF IDを入力してください。");
+            if (!liffId) {
+                alert('LIFF ID を入力してください');
                 return;
             }
-            const encodedData = encodeURIComponent(redirectData);
-            const liffUrl = `https://liff.line.me/${liffId}#redirect_uri=${encodedData}`;
-            console.log("Redirecting to (Alternative #):", liffUrl);
-            window.location.href = liffUrl;
+            // fragment でも encode すると %2F が入る → LIFF が encode → %252F (二重) になる点に注意
+            // ここでは『未エンコード』で渡して二重化を防ぐ
+            const url = `https://liff.line.me/${liffId}#redirect_uri=${redirectData}`;
+            console.log('Redirecting to (Alternative #):', url);
+            window.location.href = url;
         }
     </script>
 </body>
