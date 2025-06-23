@@ -8,42 +8,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PayPay Simulator</title>
   <style>
-    /* ===== 見た目を少し整えるだけの CSS ===== */
-    body {
-      font-family: system-ui, sans-serif;
-      background:#f7f7f7;
-      margin:0;
-      display:grid;
-      place-items:center;
-      height:100vh;
-    }
-    .card {
-      background:#fff;
-      padding:2rem;
-      border-radius:1rem;
-      box-shadow:0 4px 12px rgba(0,0,0,.1);
-      width:100%;
-      max-width:480px;
-    }
+    body{font-family:sans-serif;background:#f7f7f7;margin:0;display:grid;place-items:center;height:100vh;}
+    .card{background:#fff;padding:2rem;border-radius:1rem;box-shadow:0 4px 12px rgba(0,0,0,.1);width:100%;max-width:480px;}
     label{font-weight:600;margin-top:1rem;display:block;}
     input[type="text"]{width:100%;padding:.5rem .75rem;margin-top:.25rem;border:1px solid #ccc;border-radius:.5rem;font-size:1rem;}
     input[type="checkbox"]{margin-right:.4rem;}
-    button{
-      width:100%;
-      margin-top:.75rem;
-      padding:.6rem;
-      background:#00b900;
-      color:#fff;
-      font-size:.95rem;
-      font-weight:700;
-      border:none;
-      border-radius:.65rem;
-      cursor:pointer;
-      transition:opacity .2s;
-    }
+    button{width:100%;margin-top:.75rem;padding:.6rem;background:#00b900;color:#fff;font-size:.95rem;font-weight:700;border:none;border-radius:.65rem;cursor:pointer;transition:opacity .2s;}
     button:hover{opacity:.85;}
-    button.problem{background:#d9534f;}   /* 赤 = わざと問題を起こす */
-    button.line   {background:#4285f4;}   /* 青 = LINE スキーム */
+    button.problem{background:#d9534f;}
+    button.line{background:#4285f4;}
     .link-out{margin-top:1rem;font-size:.85rem;word-break:break-all;}
     hr{margin:1.5rem 0;border:none;border-top:1px dashed #ccc;}
   </style>
@@ -53,94 +26,51 @@
     <h1>PayPay Simulator</h1>
     <p>疑似決済 → LIFF B リダイレクトを検証します。</p>
 
-    <!-- LIFF ID と戻り値パスを変更したい場合はここを編集 -->
+    <!-- ▼ 入力欄：必要なら変更 ▼ -->
     <label>LIFF ID</label>
     <input id="liffId" type="text" value="2007624426-93P1xyXj" />
 
     <label>戻り値パス (未エンコード)</label>
     <input id="resultPath" type="text" value="/RSV_P/pxx/ClientService?AppSessionID=202506231800-TEST&status=success" />
 
-    <!-- チェックを外すと「リンクだけ生成 → 自分で新しいタブで開く」モード -->
-    <label style="margin-top:1.25rem"><input id="autoJump" type="checkbox" checked> 自動で遷移する（Network 解析しない場合のみ推奨）</label>
+    <!-- 自動遷移を OFF にすると Network キャプチャが楽になる -->
+    <label style="margin-top:1.25rem"><input id="autoJump" type="checkbox" checked> 自動で遷移する</label>
 
-    <!-- https 版：Universal Link → LINE → 外部ブラウザ用 テスト -->
     <hr>
     <h3>🔵 外部ブラウザ (https) 経由</h3>
-    <button class="problem" onclick="goProblem('https')">?redirect_uri= （二重エンコード）</button>
-    <button onclick="goFragment('https')">#redirect_uri= （ハッシュ推奨）</button>
+    <button class="problem"  onclick="goDeeplink('https',  true)">?redirect_uri= （二重エンコード）</button>
+    <button               onclick="goDeeplink('https', false)">#redirect_uri= （ハッシュ推奨）</button>
 
-    <!-- line://app 版：直接 LINE アプリを開くパターン → より本番に近い挙動 -->
     <hr>
     <h3>🟢 LINE アプリ内 (line://) 直通</h3>
-    <button class="problem line" onclick="goProblem('line')">?redirect_uri= （LINE Scheme）</button>
-    <button class="line" onclick="goFragment('line')">#redirect_uri= （LINE Scheme）</button>
+    <button class="problem line" onclick="goDeeplink('line',  true)">?redirect_uri= （LINE Scheme）</button>
+    <button class="line"        onclick="goDeeplink('line',  false)">#redirect_uri= （LINE Scheme）</button>
 
-    <!-- 生成されたリンクと「コピー」操作を表示 -->
     <div id="linkArea" class="link-out"></div>
-    <p style="font-size:.8rem;color:#666;margin-top:.5rem;">※ Network を取りたい場合は「自動で遷移する」のチェックを外し、<br>生成リンクを <b>右クリック→新しいタブで開く</b> 後に DevTools で Preserve Log を有効化してください。</p>
   </div>
 
   <script>
-    /* ========== 変数取得 ========== */
-    const liffInput = document.getElementById('liffId');      // ユーザーが入力できる LIFF ID
-    const pathInput = document.getElementById('resultPath');  // 戻り値パス
-    const linkArea  = document.getElementById('linkArea');    // 生成リンクを表示する場所
+    /* HTML 要素参照 */
+    const liffInput = document.getElementById('liffId');
+    const pathInput = document.getElementById('resultPath');
+    const linkArea  = document.getElementById('linkArea');
 
-    /*
-      buildLink()
-      ----------------------------------------------------------------------
-      kind   : "https" または "line"
-      pattern: (baseURL, path) => 完成 URL を返す関数
-      1. 入力値を取得し、line:// or https:// のベース URL を作成
-      2. pattern コールバックで具体的な Deeplink を生成
-    */
-    function buildLink(kind, pattern){
-      const id   = liffInput.value.trim();   // 前後空白を削除
+    /* 生成 → 表示 → (自動) 遷移 */
+    function setLink(link){
+      linkArea.innerHTML = `<b>生成リンク:</b><br><a href="${link}" target="_blank">${link}</a>`;
+      if(document.getElementById('autoJump').checked) location.href = link;
+    }
+
+    /* kind: https / line, useQuery: true→?redirect_uri, false→#redirect_uri */
+    function goDeeplink(kind,useQuery){
+      const id   = liffInput.value.trim();
       const path = pathInput.value.trim();
-      if(!id || !path){
-        alert('LIFF ID と 戻り値パスを入力して下さい');
-        return null;
-      }
+      if(!id||!path){alert('LIFF ID / パス入力必須');return;}
       const base = kind==='line' ? `line://app/${id}` : `https://liff.line.me/${id}`;
-      return pattern(base, path);
-    }
-
-    // クリップボードコピー用ユーティリティ
-    function copyToClip(link){
-      navigator.clipboard.writeText(link)
-        .then(()=>alert('リンクをコピーしました\n別ブラウザ/端末で貼り付けて検証して下さい'));}
-
-    /*
-      setLinks()
-      ------------------------------------------------------------------
-      1. linkArea にクリック可能な HTML を生成
-      2. autoJump が ON の場合のみ location.href = link で即遷移
-    */
-    function setLinks(link){
-      linkArea.innerHTML = `
-        <b>生成リンク:</b><br>
-        <a href="${link}" target="_blank">${link}</a><br>
-        <a href="#" onclick="copyToClip('${link}');return false;">コピー</a>`;
-
-      // 自動遷移フラグ
-      const auto = document.getElementById('autoJump').checked;
-      if(auto) location.href = link;
-    }
-
-    /*
-      goProblem() / goFragment()
-      --------------------------------------------------------------
-      kind 引数で "https" or "line" を切り替え → buildLink に渡す
-      ?redirect_uri= 版は encodeURIComponent() で 1回エンコード
-      #redirect_uri= 版は *未エンコード*（二重エンコードを避ける）
-    */
-    function goProblem(kind){
-      const link = buildLink(kind, (base, path) => `${base}?redirect_uri=${encodeURIComponent(path)}`);
-      if(link) setLinks(link);
-    }
-    function goFragment(kind){
-      const link = buildLink(kind, (base, path) => `${base}#redirect_uri=${path}`);
-      if(link) setLinks(link);
+      const link = useQuery
+        ? `${base}?redirect_uri=${encodeURIComponent(path)}`  // 問題パターン（二重エンコード源）
+        : `${base}#redirect_uri=${path}`;                     // 推奨パターン（未エンコード）
+      setLink(link);
     }
   </script>
 </body>
