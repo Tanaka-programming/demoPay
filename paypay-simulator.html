@@ -3,49 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIFF Launcher</title>
+    <title>LIFF Redirect Analyzer - Launcher</title>
     <style>
         body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
         .container { max-width: 600px; margin: auto; }
         .input-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; }
         input { width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
-        button { width: 100%; padding: 10px; font-size: 16px; cursor: pointer; margin-top: 10px; background-color: #00b900; color: white; border: none; border-radius: 5px; }
+        button { width: 100%; padding: 10px; font-size: 16px; cursor: pointer; margin-top: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; }
         .example { font-size: 12px; color: #555; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>LIFFディープリンク検証ランチャー</h1>
+        <h1>LIFFリダイレクト追跡ランチャー</h1>
         
         <div class="input-group">
             <label for="liffId">LIFF ID:</label>
-            <input type="text" id="liffId" value="YOUR_LIFF_ID_HERE">
+            <input type="text" id="liffId" value="2007624426-93P1xyXj">
         </div>
 
         <div class="input-group">
             <label for="additionalPath">LIFF URLに追加するパスとクエリ:</label>
             <input type="text" id="additionalPath" value="/profile?callback=https%3A%2F%2Fexample.com%2Fmy-page%3Fuser%3D123">
             <p class="example">例: <code>/profile?callback=https%3A%2F%2Fexample.com%2Fmy-page%3Fuser%3D123</code></p>
-            <p class="example"><code>callback</code>の値として、エンコード済みのURLを渡すケースを想定しています。</p>
         </div>
         
-        <button onclick="launchLiff()">LIFFアプリを起動</button>
+        <button onclick="launchLiff()">LIFFアプリを起動して追跡開始</button>
     </div>
 
     <script>
         function launchLiff() {
             const liffId = document.getElementById('liffId').value;
             const additionalPath = document.getElementById('additionalPath').value;
-            
-            if (!liffId || liffId === "YOUR_LIFF_ID_HERE") {
-                alert("LIFF IDを入力してください。");
-                return;
-            }
 
-            // LIFF URLを組み立てる
             const liffUrl = `https://liff.line.me/${liffId}${additionalPath}`;
             
+            // 検証のために、最初にアクセスするURLをsessionStorageに保存
+            sessionStorage.setItem('url_1_initial', liffUrl);
+            // 以前のセッション情報をクリア
+            sessionStorage.removeItem('url_2_primary');
+            sessionStorage.removeItem('liff_state_value');
+            sessionStorage.removeItem('url_3_secondary');
+
             console.log("Launching LIFF with URL:", liffUrl);
             window.location.href = liffUrl;
         }
