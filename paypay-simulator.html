@@ -3,20 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIFF Redirect Analyzer - Launcher</title>
+    <title>LIFF Redirect A/B Test - Launcher</title>
     <style>
         body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
         .container { max-width: 600px; margin: auto; }
         .input-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; }
         input { width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
-        button { width: 100%; padding: 10px; font-size: 16px; cursor: pointer; margin-top: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; }
+        button { width: 100%; padding: 12px; font-size: 16px; cursor: pointer; margin-top: 10px; color: white; border: none; border-radius: 5px; }
+        .pattern-a { background-color: #007bff; }
+        .pattern-b { background-color: #28a745; }
         .example { font-size: 12px; color: #555; }
+        hr { margin: 30px 0; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>LIFFリダイレクト追跡ランチャー</h1>
+        <h1>LIFFリダイレクト A/Bテストランチャー</h1>
         
         <div class="input-group">
             <label for="liffId">LIFF ID:</label>
@@ -29,23 +32,30 @@
             <p class="example">例: <code>/profile?callback=https%3A%2F%2Fexample.com%2Fmy-page%3Fuser%3D123</code></p>
         </div>
         
-        <button onclick="launchLiff()">LIFFアプリを起動して追跡開始</button>
+        <hr>
+
+        <button class="pattern-a" onclick="launchLiff('A')">パターンAで起動<br>(1次initのみ実行)</button>
+        <button class="pattern-b" onclick="launchLiff('B')">パターンBで起動<br>(1次・2次init両方実行)</button>
     </div>
 
     <script>
-        function launchLiff() {
+        function launchLiff(pattern) {
             const liffId = document.getElementById('liffId').value;
             const additionalPath = document.getElementById('additionalPath').value;
 
             const liffUrl = `https://liff.line.me/${liffId}${additionalPath}`;
             
-            // 検証のために、最初にアクセスするURLをsessionStorageに保存
-            sessionStorage.setItem('url_1_initial', liffUrl);
+            // どちらのパターンでテストするかをsessionStorageに保存
+            sessionStorage.setItem('liff_test_pattern', pattern);
             // 以前のセッション情報をクリア
+            sessionStorage.removeItem('url_1_initial');
             sessionStorage.removeItem('url_2_primary');
             sessionStorage.removeItem('liff_state_value');
 
-            console.log("Launching LIFF with URL:", liffUrl);
+            // 最初にアクセスするURLも保存
+            sessionStorage.setItem('url_1_initial', liffUrl);
+
+            console.log(`Launching LIFF with URL for Pattern ${pattern}:`, liffUrl);
             window.location.href = liffUrl;
         }
     </script>
