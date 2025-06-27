@@ -3,59 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIFF Redirect A/B Test - Launcher</title>
+    <title>LIFF Fragment A/B Test - Launcher</title>
     <style>
         body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
         .container { max-width: 600px; margin: auto; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input { width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
         button { width: 100%; padding: 12px; font-size: 16px; cursor: pointer; margin-top: 10px; color: white; border: none; border-radius: 5px; }
         .pattern-a { background-color: #007bff; }
         .pattern-b { background-color: #28a745; }
-        .example { font-size: 12px; color: #555; }
-        hr { margin: 30px 0; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>LIFFリダイレクト A/Bテストランチャー</h1>
-        
-        <div class="input-group">
-            <label for="liffId">LIFF ID:</label>
-            <input type="text" id="liffId" value="2007624426-93P1xyXj">
-        </div>
-
-        <div class="input-group">
-            <label for="additionalPath">LIFF URLに追加するパスとクエリ:</label>
-            <input type="text" id="additionalPath" value="/profile?callback=https%3A%2F%2Fexample.com%2Fmy-page%3Fuser%3D123">
-            <p class="example">例: <code>/profile?callback=https%3A%2F%2Fexample.com%2Fmy-page%3Fuser%3D123</code></p>
-        </div>
-        
+        <h1>LIFFフラグメント処理順序 A/Bテスト</h1>
+        <p>`liff.init()`とデータ読み取りのどちらを先に行うかをテストします。</p>
         <hr>
-
-        <button class="pattern-a" onclick="launchLiff('A')">パターンAで起動<br>(1次initのみ実行)</button>
-        <button class="pattern-b" onclick="launchLiff('B')">パターンBで起動<br>(1次・2次init両方実行)</button>
+        <button class="pattern-a" onclick="launchLiff('A')">パターンAで起動<br>(データ読み取り → liff.init)</button>
+        <button class="pattern-b" onclick="launchLiff('B')">パターンBで起動<br>(liff.init → データ読み取り)</button>
     </div>
 
     <script>
         function launchLiff(pattern) {
-            const liffId = document.getElementById('liffId').value;
-            const additionalPath = document.getElementById('additionalPath').value;
+            const liffId = "2007624426-93P1xyXj";
 
-            const liffUrl = `https://liff.line.me/${liffId}${additionalPath}`;
+            // 渡したいデータ
+            const path = "/profile";
+            const callbackUrl = "https://example.com/my-page?user=123";
+            const fragmentParams = new URLSearchParams();
+            fragmentParams.append('path', path);
+            fragmentParams.append('callback', callbackUrl);
             
-            // どちらのパターンでテストするかをsessionStorageに保存
+            // テストパターンをsessionStorageに保存
             sessionStorage.setItem('liff_test_pattern', pattern);
-            // 以前のセッション情報をクリア
-            sessionStorage.removeItem('url_1_initial');
-            sessionStorage.removeItem('url_2_primary');
-            sessionStorage.removeItem('liff_state_value');
-
-            // 最初にアクセスするURLも保存
-            sessionStorage.setItem('url_1_initial', liffUrl);
-
-            console.log(`Launching LIFF with URL for Pattern ${pattern}:`, liffUrl);
+            
+            const liffUrl = `https://liff.line.me/${liffId}#${fragmentParams.toString()}`;
+            
+            console.log(`Launching LIFF for Pattern ${pattern}:`, liffUrl);
             window.location.href = liffUrl;
         }
     </script>
