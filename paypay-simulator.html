@@ -1,82 +1,54 @@
-<!-- ============================================================================================== -->
-<!-- ① PAYPAY‑DEMO.HTML – Deeplink Generator                                                          -->
-<!-- ============================================================================================== -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PayPay Simulator</title>
-  <style>
-    /* ====== シンプル UI ====== */
-    body{font-family:sans-serif;margin:0;display:grid;place-items:center;height:100vh;background:#f7f7f7;}
-    .card{background:#fff;width:100%;max-width:520px;padding:2rem;border-radius:1rem;box-shadow:0 4px 12px rgba(0,0,0,.1);}
-    label{display:block;font-weight:600;margin-top:1rem;}
-    input[type="text"]{width:100%;padding:.55rem .75rem;margin-top:.3rem;border:1px solid #ccc;border-radius:.55rem;font-size:1rem;}
-    input[type="checkbox"]{margin-right:.4rem;vertical-align:middle;}
-    button{width:100%;margin-top:.75rem;padding:.7rem;border:none;border-radius:.7rem;font-weight:700;font-size:.95rem;cursor:pointer;transition:opacity .2s;color:#fff;}
-    button:hover{opacity:.87;}
-    button.problem{background:#d9534f;} /* 二重エンコード用 */
-    button.normal {background:#00b900;} /* 推奨パターン用 */
-    button.line   {background:#4285f4;} /* line:// スキーム */
-    .link-out{margin-top:1rem;font-size:.85rem;word-break:break-all;}
-    hr{margin:1.6rem 0;border:none;border-top:1px dashed #ccc;}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIFF Launcher</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        .container { max-width: 600px; margin: auto; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
+        button { width: 100%; padding: 10px; font-size: 16px; cursor: pointer; margin-top: 10px; background-color: #00b900; color: white; border: none; border-radius: 5px; }
+        .example { font-size: 12px; color: #555; }
+    </style>
 </head>
 <body>
-  <div class="card">
-    <h1>PayPay Simulator</h1>
-    <p>疑似決済 → LIFF Deeplink を生成。Network テストや LINE 直通も可。</p>
+    <div class="container">
+        <h1>LIFFディープリンク検証ランチャー</h1>
+        
+        <div class="input-group">
+            <label for="liffId">LIFF ID:</label>
+            <input type="text" id="liffId" value="YOUR_LIFF_ID_HERE">
+        </div>
 
-    <!-- 入力値（変更可） -->
-    <label>LIFF ID</label>
-    <input id="liffId" type="text" value="2007624426-93P1xyXj">
+        <div class="input-group">
+            <label for="additionalPath">LIFF URLに追加するパスとクエリ:</label>
+            <input type="text" id="additionalPath" value="/profile?callback=https%3A%2F%2Fexample.com%2Fmy-page%3Fuser%3D123">
+            <p class="example">例: <code>/profile?callback=https%3A%2F%2Fexample.com%2Fmy-page%3Fuser%3D123</code></p>
+            <p class="example"><code>callback</code>の値として、エンコード済みのURLを渡すケースを想定しています。</p>
+        </div>
+        
+        <button onclick="launchLiff()">LIFFアプリを起動</button>
+    </div>
 
-    <label>戻り値パス（未エンコード）</label>
-    <input id="resultPath" type="text" value="/RSV_P/pxx/ClientService?AppSessionID=202506231800-TEST&status=success">
+    <script>
+        function launchLiff() {
+            const liffId = document.getElementById('liffId').value;
+            const additionalPath = document.getElementById('additionalPath').value;
+            
+            if (!liffId || liffId === "YOUR_LIFF_ID_HERE") {
+                alert("LIFF IDを入力してください。");
+                return;
+            }
 
-    <!-- 自動遷移切替 -->
-    <label style="margin-top:1.2rem"><input id="autoJump" type="checkbox" checked> 自動で遷移する</label>
-
-    <!-- https で開くボタン -->
-    <hr><h3>🔵 外部ブラウザ (https)</h3>
-    <button class="problem" onclick="makeLink('https', true)">?redirect_uri=（問題）</button>
-    <button class="normal"  onclick="makeLink('https', false)">#redirect_uri=（推奨）</button>
-
-    <!-- LINE スキームで開くボタン -->
-    <hr><h3>🟢 LINE アプリ内 (line://)</h3>
-    <button class="problem line" onclick="makeLink('line', true)">?redirect_uri=（LINE）</button>
-    <button class="normal  line" onclick="makeLink('line', false)">#redirect_uri=（LINE）</button>
-
-    <!-- 生成リンクをここに表示 -->
-    <div id="linkArea" class="link-out"></div>
-  </div>
-
-  <script>
-    /* DOM キャッシュ */
-    const idEl   = document.getElementById('liffId');
-    const pathEl = document.getElementById('resultPath');
-    const jumpEl = document.getElementById('autoJump');
-    const outEl  = document.getElementById('linkArea');
-
-    /**
-     * Deeplink を生成・表示し、autoJump が ON なら遷移
-     * @param {'https'|'line'} scheme   - deeplink スキーム
-     * @param {boolean}        useQuery - true=?redirect_uri / false=#redirect_uri
-     */
-    function makeLink(scheme,useQuery){
-      const id   = idEl.value.trim();
-      const path = pathEl.value.trim();
-      if(!id||!path){alert('LIFF ID とパスを入力してください');return;}
-
-      const base = scheme==='line' ? `line://app/${id}` : `https://liff.line.me/${id}`;
-      const link = useQuery
-        ? `${base}?redirect_uri=${encodeURIComponent(path)}`
-        : `${base}#redirect_uri=${path}`;
-
-      outEl.innerHTML = `<b>生成リンク:</b><br><a href="${link}" target="_blank">${link}</a>`;
-      if(jumpEl.checked) location.href = link; // 自動遷移
-    }
-  </script>
+            // LIFF URLを組み立てる
+            const liffUrl = `https://liff.line.me/${liffId}${additionalPath}`;
+            
+            console.log("Launching LIFF with URL:", liffUrl);
+            window.location.href = liffUrl;
+        }
+    </script>
 </body>
 </html>
