@@ -3,41 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIFF Fragment A/B Test - Launcher</title>
+    <title>LIFF Redirect Analyzer - Launcher</title>
     <style>
         body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
         .container { max-width: 600px; margin: auto; }
-        button { width: 100%; padding: 12px; font-size: 16px; cursor: pointer; margin-top: 10px; color: white; border: none; border-radius: 5px; }
-        .pattern-a { background-color: #007bff; }
-        .pattern-b { background-color: #28a745; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
+        button { width: 100%; padding: 10px; font-size: 16px; cursor: pointer; margin-top: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; }
+        .example { font-size: 12px; color: #555; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>LIFFフラグメント処理順序 A/Bテスト</h1>
-        <p>`liff.init()`とデータ読み取りのどちらを先に行うかをテストします。</p>
-        <hr>
-        <button class="pattern-a" onclick="launchLiff('A')">パターンAで起動<br>(データ読み取り → liff.init)</button>
-        <button class="pattern-b" onclick="launchLiff('B')">パターンBで起動<br>(liff.init → データ読み取り)</button>
+        <h1>LIFFリダイレクト追跡ランチャー</h1>
+        
+        <div class="input-group">
+            <label for="liffId">LIFF ID:</label>
+            <input type="text" id="liffId" value="2007624426-93P1xyXj" readonly>
+        </div>
+
+        <div class="input-group">
+            <label for="additionalPath">LIFF URLに追加するパスとクエリ:</label>
+            <input type="text" id="additionalPath" value="/profile?redirect_uri=https%3A%2F%2Fexample.com%2Fmy-page%3Fuser%3D123">
+            <p class="example">例: <code>/profile?redirect_uri=https%3A%2F%2Fexample.com%2Fmy-page%3Fuser%3D123</code></p>
+        </div>
+        
+        <button onclick="launchLiff()">LIFFアプリを起動して追跡開始</button>
     </div>
 
     <script>
-        function launchLiff(pattern) {
-            const liffId = "2007624426-93P1xyXj";
+        function launchLiff() {
+            const liffId = document.getElementById('liffId').value;
+            const additionalPath = document.getElementById('additionalPath').value;
 
-            // 渡したいデータ
-            const path = "/profile";
-            const callbackUrl = "https://example.com/my-page?user=123";
-            const fragmentParams = new URLSearchParams();
-            fragmentParams.append('path', path);
-            fragmentParams.append('callback', callbackUrl);
+            const liffUrl = `https://liff.line.me/${liffId}${additionalPath}`;
             
-            // テストパターンをsessionStorageに保存
-            sessionStorage.setItem('liff_test_pattern', pattern);
-            
-            const liffUrl = `https://liff.line.me/${liffId}#${fragmentParams.toString()}`;
-            
-            console.log(`Launching LIFF for Pattern ${pattern}:`, liffUrl);
+            // 以前のセッション情報をクリア
+            sessionStorage.removeItem('url_1_initial');
+            sessionStorage.removeItem('url_2_primary');
+            sessionStorage.removeItem('liff_state_value');
+
+            // 検証のために、最初にアクセスするURL①をsessionStorageに保存
+            sessionStorage.setItem('url_1_initial', liffUrl);
+
+            console.log("Launching LIFF with URL:", liffUrl);
             window.location.href = liffUrl;
         }
     </script>
