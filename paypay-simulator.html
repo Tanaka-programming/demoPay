@@ -3,40 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIFF Fragment Verifier - Launcher</title>
+    <title>LIFF Base64 Analyzer - Launcher</title>
     <style>
         body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
         .container { max-width: 600px; margin: auto; }
-        button { width: 100%; padding: 12px; font-size: 16px; cursor: pointer; margin-top: 10px; background-color: #00b900; color: white; border: none; border-radius: 5px; }
+        button { width: 100%; padding: 12px; font-size: 16px; cursor: pointer; margin-top: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>LIFFフラグメント方式 検証ランチャー</h1>
-        <p>以下のボタンを押し、LIFFアプリが正常にデータを受け取れることを確認します。</p>
-        <button onclick="launchLiff()">LIFFアプリを起動</button>
+        <h1>LIFF Base64方式 追跡ランチャー</h1>
+        <p>以下のボタンを押し、LIFFのディープリンク機能でBase64データが安全に渡されることを検証します。</p>
+        <button onclick="launchLiff()">LIFFアプリを起動して追跡開始</button>
     </div>
 
     <script>
         function launchLiff() {
             const liffId = "2007624426-93P1xyXj";
 
-            // 渡したいパスとパラメータのデータ
-            const path = "/profile";
-            const callbackUrl = "https://example.com/my-page?user=123";
+            // 渡したい複雑なデータ（URL形式の文字列）
+            const dataToPass = "https://example.com/my-page?user=123&status=success";
 
-            // フラグメント用のパラメータを組み立てる
-            const fragmentParams = new URLSearchParams();
-            fragmentParams.append('path', path);
-            fragmentParams.append('callback', callbackUrl);
+            // データをBase64エンコード
+            const base64Data = btoa(dataToPass);
             
-            // LIFF URLを組み立てる
-            const liffUrl = `https://liff.line.me/${liffId}#${fragmentParams.toString()}`;
+            // Base64文字列をクエリパラメータとしてパス付きLIFF URLを組み立てる
+            const additionalPath = `/profile?data=${base64Data}`;
+            const liffUrl = `https://liff.line.me/${liffId}${additionalPath}`;
             
-            // 比較検証のために、最初にアクセスするURL(URL①)をsessionStorageに保存
-            sessionStorage.setItem('url_1_initial_fragment_test', liffUrl);
+            // 以前のセッション情報をクリア
+            sessionStorage.removeItem('url_1_initial');
+            sessionStorage.removeItem('url_2_primary');
+            sessionStorage.removeItem('liff_state_value');
 
-            console.log("Launching LIFF with Fragment URL:", liffUrl);
+            // 最初にアクセスするURL①をsessionStorageに保存
+            sessionStorage.setItem('url_1_initial', liffUrl);
+
+            console.log("Launching LIFF with Base64 data:", liffUrl);
             window.location.href = liffUrl;
         }
     </script>
