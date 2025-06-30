@@ -3,43 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIFF Base64 Analyzer - Launcher</title>
+    <title>LIFF Launcher (Query + Base64)</title>
     <style>
         body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
         .container { max-width: 600px; margin: auto; }
-        button { width: 100%; padding: 12px; font-size: 16px; cursor: pointer; margin-top: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; }
+        button { width: 100%; padding: 12px; font-size: 16px; cursor: pointer; margin-top: 10px; background-color: #00b900; color: white; border: none; border-radius: 5px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>LIFF Base64方式 追跡ランチャー</h1>
-        <p>以下のボタンを押し、LIFFのディープリンク機能でBase64データが安全に渡されることを検証します。</p>
-        <button onclick="launchLiff()">LIFFアプリを起動して追跡開始</button>
+        <h1>LIFF Launcher (クエリ + Base64方式)</h1>
+        <p>以下のボタンを押し、すべての問題を解決した方式でLIFFアプリを起動します。</p>
+        <button onclick="launchLiff()">LIFFアプリを起動</button>
     </div>
 
     <script>
         function launchLiff() {
             const liffId = "2007624426-93P1xyXj";
 
-            // 渡したい複雑なデータ（URL形式の文字列）
-            const dataToPass = "https://example.com/my-page?user=123&status=success";
+            // 渡したいすべてのデータをオブジェクトにまとめる
+            const dataToPass = {
+                path: "/profile",
+                callback: "https://example.com/my-page?user=123",
+                timestamp: new Date().getTime()
+            };
 
-            // データをBase64エンコード
-            const base64Data = btoa(dataToPass);
+            // 1. オブジェクトをJSON文字列に変換
+            const jsonString = JSON.stringify(dataToPass);
+
+            // 2. JSON文字列をBase64エンコード
+            const base64Data = btoa(jsonString);
+
+            console.log("元のデータ:", dataToPass);
+            console.log("Base64エンコード後:", base64Data);
+
+            // 3. Base64文字列を単一のクエリパラメータとしてLIFF URLを組み立てる
+            // ★LIFF URL自体にパスは含めない
+            const liffUrl = `https://liff.line.me/${liffId}?payload=${base64Data}`;
             
-            // Base64文字列をクエリパラメータとしてパス付きLIFF URLを組み立てる
-            const additionalPath = `/profile?data=${base64Data}`;
-            const liffUrl = `https://liff.line.me/${liffId}${additionalPath}`;
-            
-            // 以前のセッション情報をクリア
-            sessionStorage.removeItem('url_1_initial');
-            sessionStorage.removeItem('url_2_primary');
-            sessionStorage.removeItem('liff_state_value');
-
-            // 最初にアクセスするURL①をsessionStorageに保存
-            sessionStorage.setItem('url_1_initial', liffUrl);
-
-            console.log("Launching LIFF with Base64 data:", liffUrl);
+            console.log("Launching LIFF with Base64 data in query:", liffUrl);
             window.location.href = liffUrl;
         }
     </script>
